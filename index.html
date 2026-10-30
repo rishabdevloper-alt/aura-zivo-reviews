@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AURA ZIVO • Reviews</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#080b16;--panel:#11182a;--line:#263452;--cyan:#55e6ff;--pink:#d78cff;--muted:#9eacc7;--white:#f4f7ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 0%,#17264b 0,transparent 38%),var(--bg);color:var(--white);font:16px/1.5 system-ui,Segoe UI,Arial}
+main{max-width:850px;margin:auto;padding:34px 18px 60px}.brand{text-align:center;margin:12px 0 28px}.brand small{letter-spacing:5px;color:var(--cyan)}h1{font-size:clamp(30px,6vw,48px);margin:5px 0;background:linear-gradient(90deg,var(--cyan),var(--pink));color:transparent;background-clip:text}.sub{color:var(--muted)}
+.card{background:#11182aee;border:1px solid var(--line);border-radius:22px;padding:24px;margin:18px 0;box-shadow:0 18px 55px #0005}.card h2{margin-top:0}.stars{display:flex;gap:7px;flex-wrap:wrap;margin:14px 0}.star{border:1px solid #435274;background:#0b1222;color:#65718d;border-radius:12px;padding:9px 12px;font-size:25px;cursor:pointer}.star.active{color:#ffd76b;border-color:#ffd76b;background:#29233a}.rating-label{color:var(--cyan);min-height:24px}textarea,input{width:100%;border:1px solid #344465;border-radius:12px;background:#091122;color:var(--white);padding:13px;font:inherit}textarea{min-height:120px;resize:vertical}label{display:block;margin:18px 0 8px;color:#c5d1e8}button{border:0;border-radius:12px;padding:12px 18px;background:linear-gradient(100deg,#39cce9,#bb82ff);color:#08101e;font-weight:800;font-size:15px;cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}.secondary{background:#202d49;color:var(--white);border:1px solid #405273}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.status{min-height:24px;color:var(--cyan);margin-top:12px}.hidden{display:none!important}.muted{color:var(--muted);font-size:13px}.review{border:1px solid var(--line);border-radius:14px;padding:15px;margin:12px 0;background:#0b1222}.review .gold{color:#ffd76b}.topline{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.pill{font-size:12px;color:var(--cyan);border:1px solid #31546b;border-radius:30px;padding:3px 9px}
+</style></head>
+<body><main>
+<header class="brand"><small>A U R A&nbsp; Z I V O</small><h1>Share your experience</h1><div class="sub">Your feedback helps us grow. Thank you for being here!</div><div style="margin-top:16px"><button class="secondary" id="adminJump" type="button">Admin</button></div></header>
+<section class="card" id="reviewCard"><h2>Leave a review</h2><label>Your rating</label><div class="stars" id="stars" aria-label="Choose a rating"></div><div class="rating-label" id="ratingLabel">Choose from ½ to 5 stars</div><label for="note">Your note (optional)</label><textarea id="note" maxlength="1000" placeholder="Tell us what you liked or what we can improve..."></textarea><div class="muted" style="text-align:right"><span id="count">0</span>/1000</div><button id="submit">Submit review</button><div class="status" id="submitStatus" role="status"></div></section>
+<div id="adminOverlay" class="hidden" style="position:fixed;inset:0;z-index:20;background:#020611dd;display:grid;place-items:center;padding:18px;overflow:auto"><section class="card" id="adminModal" role="dialog" aria-modal="true" aria-labelledby="adminTitle" style="width:min(100%,620px);max-height:85vh;overflow:auto;margin:0"><div class="topline"><h2 id="adminTitle" style="margin:0">Admin dashboard</h2><button class="secondary" id="closeAdmin" type="button" aria-label="Close admin">✕</button></div><p class="muted">Sign in with the admin account created in Supabase. Visitors cannot view submitted reviews.</p>
+<div id="loginBox"><label for="email">Admin email</label><input id="email" type="email" autocomplete="username" placeholder="Admin email"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Admin password"><div class="row" style="margin-top:14px"><button id="login">Admin sign in</button></div></div>
+<div id="adminBox" class="hidden"><div class="row" style="justify-content:space-between"><p id="stats" class="muted"></p><div class="row"><button class="secondary" id="refresh">Refresh</button><button class="secondary" id="csv">Export CSV</button><button class="secondary" id="logout">Sign out</button></div></div><div id="reviews"></div></div><div class="status" id="adminStatus" role="status"></div>
+</section></div><p class="muted" style="text-align:center">AURA ZIVO • Thank you for your feedback</p></main>
+<div id="thanks" class="hidden" style="position:fixed;inset:0;background:#020611dd;display:grid;place-items:center;padding:20px"><div class="card" style="max-width:420px;text-align:center"><div style="font-size:42px">✨</div><h2>Thank you for your review!</h2><p class="muted">Your feedback has been submitted successfully.</p><button id="closeThanks">Done</button></div></div>
+<script>
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY_HERE";
+const configured = !SUPABASE_URL.startsWith("PASTE_") && !SUPABASE_ANON_KEY.startsWith("PASTE_");
+const db = configured && window.supabase ? window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY) : null;
+let rating=0, rows=[];
+const $=id=>document.getElementById(id);
+const stars=$("stars");
+for(let n=1;n<=5;n++){const b=document.createElement("button");b.type="button";b.className="star";b.textContent="★";b.title=n+" stars";b.setAttribute("aria-label",n+" stars");b.onclick=()=>setRating(n);stars.appendChild(b)}
+const halfBtn=document.createElement("button");halfBtn.type="button";halfBtn.className="secondary";halfBtn.textContent="+ .5";halfBtn.title="Add half a star";halfBtn.setAttribute("aria-label","Add half a star");halfBtn.onclick=()=>{if(rating>0)setRating(Math.min(5,Math.floor(rating)+0.5));else setRating(0.5)};stars.appendChild(halfBtn);
+function setRating(v){rating=v;[...stars.children].slice(0,5).forEach((b,i)=>b.classList.toggle("active",i<Math.floor(v)));halfBtn.classList.toggle("active",v%1===0.5);$("ratingLabel").textContent=v+" / 5 stars"}
+$("adminJump").onclick=()=>{$("adminOverlay").classList.remove("hidden");$("email").focus({preventScroll:true})};
+$("closeAdmin").onclick=()=>{$("adminOverlay").classList.add("hidden")};
+$("adminOverlay").addEventListener("click",e=>{if(e.target===$("adminOverlay"))$("adminOverlay").classList.add("hidden")});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")$("adminOverlay").classList.add("hidden")});
+$("note").addEventListener("input",()=>$("count").textContent=$("note").value.length);
+$("submit").onclick=async()=>{if(!db){$("submitStatus").textContent="Setup needed: add your Supabase URL and public key in index.html.";return}if(!rating){$("submitStatus").textContent="Please choose a rating first.";return}
+$("submit").disabled=true;$("submitStatus").textContent="Sending...";
+const {error}=await db.from("reviews").insert({rating,note:$("note").value.trim()});
+$("submit").disabled=false;if(error){$("submitStatus").textContent="Could not submit. Please try again.";console.error(error);return}
+$("note").value="";$("count").textContent="0";rating=0;[...stars.children].forEach(b=>b.classList.remove("active"));$("ratingLabel").textContent="Choose from ½ to 5 stars";$("submitStatus").textContent="";$("thanks").classList.remove("hidden");
+};
+$("closeThanks").onclick=()=>$("thanks").classList.add("hidden");
+function adminMsg(s){$("adminStatus").textContent=s}
+async function loadReviews(){const {data,error}=await db.from("reviews").select("id,rating,note,created_at").order("created_at",{ascending:false});if(error){adminMsg("Could not load reviews. Check admin access.");return}rows=data||[];$("stats").textContent=rows.length+" reviews • Average "+(rows.length?(rows.reduce((a,r)=>a+Number(r.rating),0)/rows.length).toFixed(2):"0.00")+" / 5";$("reviews").innerHTML="";
+if(!rows.length){$("reviews").textContent="No reviews yet.";return}
+rows.forEach(r=>{const el=document.createElement("article");el.className="review";const top=document.createElement("div");top.className="topline";const score=document.createElement("strong");score.className="gold";score.textContent="★ "+Number(r.rating).toFixed(1)+" / 5";const date=document.createElement("span");date.className="muted";date.textContent=new Date(r.created_at).toLocaleString();top.append(score,date);const note=document.createElement("p");note.textContent=r.note||"(No note provided)";el.append(top,note);$("reviews").append(el)})}
+$("login").onclick=async()=>{if(!db){adminMsg("Setup needed: configure Supabase in index.html.");return}adminMsg("Signing in...");const {error}=await db.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});if(error){adminMsg("Sign-in failed. Check your admin email and password.");return}const {data:userData}=await db.auth.getUser();const {data:admin}=await db.from("admin_users").select("user_id").eq("user_id",userData.user.id).maybeSingle();if(!admin){await db.auth.signOut();adminMsg("This account is not approved as an admin.");return}$("loginBox").classList.add("hidden");$("adminBox").classList.remove("hidden");adminMsg("");await loadReviews()};
+$("refresh").onclick=loadReviews;$("logout").onclick=async()=>{await db.auth.signOut();$("adminBox").classList.add("hidden");$("loginBox").classList.remove("hidden");adminMsg("Signed out.")};
+$("csv").onclick=()=>{const esc=s=>'"'+String(s??"").replaceAll('"','""')+'"';const csv=["Rating,Note,Date/time",...rows.map(r=>[r.rating,esc(r.note),esc(new Date(r.created_at).toLocaleString())].join(","))].join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="aura-zivo-reviews.csv";a.click();URL.revokeObjectURL(a.href)};
+if(!configured) $("submitStatus").textContent="Website setup is not finished yet. Follow SETUP.txt to connect online storage.";
+</script></body></html>

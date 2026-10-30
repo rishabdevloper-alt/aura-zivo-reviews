@@ -1,0 +1,45 @@
+AURA ZIVO REVIEWS — ONLINE SETUP (NO QR CODE INCLUDED)
+
+WHAT THIS VERSION DOES
+• Half-star ratings: 0.5 through 5.0
+• Optional written note (up to 1,000 characters)
+• Thank-you popup after a successful submission
+• Online storage in Supabase, so reviews from visitors' phones appear on your admin laptop
+• Private admin sign-in, review list, exact server-saved date/time, average rating and CSV export
+• No QR code generator is included, as requested
+
+IMPORTANT
+This is the website code, but it will NOT be online until you connect a Supabase project and publish the site. Ask a parent/guardian or trusted adult to help create and manage the online accounts. Never put a Supabase service_role/secret key in this website. The public anon/publishable key is the only key that belongs in the browser.
+
+1) CREATE THE ONLINE DATABASE
+- With a trusted adult, create a project at https://supabase.com/
+- Open the project's SQL Editor, create a new query, paste all of schema.sql, and run it.
+- In Project Settings > API (or API Keys), copy the Project URL and the publishable/anon public key.
+- Open index.html in a text editor. Replace the two PASTE_... values near the top of the script with those values. Keep the quotes.
+  Example: const SUPABASE_URL = "https://your-project.supabase.co";
+  Example: const SUPABASE_ANON_KEY = "your-public-anon-or-publishable-key";
+
+2) CREATE THE ADMIN LOGIN
+- In Supabase Dashboard > Authentication > Users, add an admin user with an email address and a strong password. Use an adult-managed email.
+- Copy that user's UUID.
+- In Supabase SQL Editor run this, replacing the example UUID:
+  insert into public.admin_users (user_id) values ('PASTE-ADMIN-USER-UUID-HERE');
+- Keep the admin email/password private. Do not put them in index.html.
+- The old demo username/password is not used: a password written in public website code is not secure.
+
+3) PUBLISH THE WEBSITE
+- Upload index.html to a static host such as Netlify or Vercel using an adult-managed account.
+- After publishing, open the website URL on a phone using mobile data to test a review.
+- Open the same URL on your laptop, sign in in the Admin dashboard and press Refresh. Reviews should appear from all visitors.
+- Keep the published website URL for sharing. QR creation is deliberately not included.
+
+DATE/TIME
+The database assigns created_at on the server. The admin page displays it in the laptop browser's local time zone. The stored timestamp is precise to the database timestamp resolution.
+
+SECURITY NOTES
+- Never share the Supabase service_role key or database password.
+- The public key is designed for browser use; Row Level Security policies in schema.sql restrict what visitors can do.
+- Public visitors can submit reviews but cannot list, edit or delete reviews.
+- Only UUIDs added to admin_users can read reviews.
+- This simple public review form has no CAPTCHA/rate limiting. For a busy public exhibition, ask an adult to consider adding spam protection.
+- Internet access is required to submit and view cloud reviews.
